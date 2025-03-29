@@ -1,5 +1,5 @@
 ﻿
-![NuGet Downloads](https://img.shields.io/nuget/dt/MGenericRepository)
+![NuGet Downloads](https://img.shields.io/nuget/dt/MGenericRepository.svg)
 
 
 # Generic Repository for .NET Core
