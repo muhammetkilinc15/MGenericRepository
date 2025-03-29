@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GenericRepository
 {
-    public class Repository<TEntity, TContext>: IRepository<TEntity> where TEntity : class where TContext : DbContext
+    public class Repository<TEntity, TContext> : IRepository<TEntity> where TEntity : class where TContext : DbContext
     {
         protected readonly TContext _Context;
         private readonly DbSet<TEntity> _Entity;
@@ -78,7 +78,7 @@ namespace GenericRepository
 
         public TEntity First(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return _Entity.First(expression);
             }
@@ -88,7 +88,7 @@ namespace GenericRepository
 
         public async Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default, bool isTrackingActive = true)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return await _Entity.FirstAsync(expression, cancellationToken);
             }
@@ -98,7 +98,7 @@ namespace GenericRepository
 
         public TEntity FirstOrDefault(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return _Entity.FirstOrDefault(expression);
             }
@@ -108,7 +108,7 @@ namespace GenericRepository
 
         public Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default, bool isTrackingActive = true)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return _Entity.FirstOrDefaultAsync(expression, cancellationToken);
             }
@@ -117,16 +117,21 @@ namespace GenericRepository
 
         public IQueryable<TEntity> GetAll(bool isTrackingActive = true, Expression<Func<TEntity, bool>> expression = null)
         {
-            if (isTrackingActive)
+            var query = _Entity.AsQueryable();
+            if (!isTrackingActive)
             {
-                return _Entity.Where(expression);
+                query = query.AsNoTracking();
             }
-            return _Entity.AsNoTracking().Where(expression);
+            if (expression != null)
+            {
+                query = query.Where(expression);
+            }
+            return query;
         }
 
         public TEntity GetByExpression(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return _Entity.Where(expression).FirstOrDefault();
             }
@@ -135,7 +140,7 @@ namespace GenericRepository
 
         public async Task<TEntity> GetByExpressionAsync(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true, CancellationToken cancellationToken = default)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return await _Entity.Where(expression).FirstOrDefaultAsync(cancellationToken);
             }
@@ -174,7 +179,7 @@ namespace GenericRepository
 
         public IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true)
         {
-            if (isTrackingActive)
+            if (!isTrackingActive)
             {
                 return _Entity.Where(expression);
             }
