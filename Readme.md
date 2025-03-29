@@ -91,7 +91,7 @@ Usage Examples
 
 #### Dependency Injection
 ```csharp
-  builder.Service.AddScoped<IUserRepository, UserRepository>();
+  builder.Service.AddScoped<IProductRepository, ProductRepository>();
   builder.Services.AddScoped<IUnitOfWork>(srv => srv.GetRequiredService<ApplicationDbContext>());
 
 ```
