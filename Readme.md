@@ -1,5 +1,7 @@
 ﻿
 ![NuGet Downloads](https://img.shields.io/nuget/dt/MGenericRepository.svg)
+![NuGet Version](https://img.shields.io/nuget/v/MGenericRepository.svg)
+![NuGet Pre-release Version](https://img.shields.io/nuget/vpre/MGenericRepository.svg)
 
 
 # Generic Repository for .NET Core
