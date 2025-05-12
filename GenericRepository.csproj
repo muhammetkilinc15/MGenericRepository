@@ -3,16 +3,16 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <PackageId>MGenericRepository</PackageId>
     <Title>Generic Repository</Title>
     <Authors>Muhammet Kılınç</Authors>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Company>Muhammet Kılınç</Company>
     <Product>Generic Repository</Product>
     <Description>.NET Core uygulamalarında veri erişim işlemlerini basitleştiren bir Generic Repository desen uygulamasıdır. Bu paket, CRUD işlemleri, özel sorgular ve Unit of Work ile işlem yönetimi desteği sunar. Kod tekrarını azaltır, okunabilirliği artırır ve bakımını kolaylaştırır.</Description>
     <Copyright>Copyright 2025</Copyright>
-    <PackageIcon>icons8-m-100.png</PackageIcon>
+    <PackageIcon>Package Logo.png</PackageIcon>
     <PackageReadmeFile>Readme.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/muhammetkilinc15/GenericRepository</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\Downloads\icons8-m-100.png">
+    <None Include="C:\Users\Bemu\Downloads\Package Logo.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

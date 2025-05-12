@@ -34,17 +34,23 @@ namespace GenericRepository
         #endregion
 
         #region Get
-        IQueryable<TEntity> GetAll(bool isTrackingActive = true, Expression<Func<TEntity, bool>> expression = null);
+        IQueryable<TEntity> AsQueryable(bool isTrackingActive = false);
+        IQueryable<TEntity> GetAll(bool isTrackingActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes);
         IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
         TEntity First(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
         TEntity FirstOrDefault(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
         Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default, bool isTrackingActive = true);
         Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default, bool isTrackingActive = true);
-        Task<TEntity> GetByExpressionAsync(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true, CancellationToken cancellationToken = default);
+        Task<TEntity> GetByExpressionAsync(
+                Expression<Func<TEntity, bool>> expression,
+                bool isTrackingActive = true,
+                CancellationToken cancellationToken = default,
+                params Expression<Func<TEntity, object>>[] includes);
+
         Task<TEntity> GetFirstAsync(CancellationToken cancellationToken = default);
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
         bool Any(Expression<Func<TEntity, bool>> expression);
-        TEntity GetByExpression(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
+        TEntity GetByExpression(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true, params Expression<Func<TEntity, object>>[] includes);
         TEntity GetFirst();
         #endregion
         IQueryable<KeyValuePair<bool, int>> CountBy(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
