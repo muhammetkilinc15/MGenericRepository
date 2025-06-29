@@ -1,13 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
-namespace GenericRepository
+namespace GenericRepository.Services
 {
     public class Repository<TEntity, TContext> : IRepository<TEntity> where TEntity : class where TContext : DbContext
     {
@@ -37,7 +33,6 @@ namespace GenericRepository
             await _Entity.AddRangeAsync(entities, cancellationToken);
         }
         #endregion Add
-
         #region Delete
         public virtual void Delete(TEntity entity)
         {
@@ -60,7 +55,6 @@ namespace GenericRepository
             _Entity.RemoveRange(entities);
         }
         #endregion Delete
-
         #region Update
         public virtual void Update(TEntity entity)
         {
@@ -82,8 +76,6 @@ namespace GenericRepository
             _Entity.UpdateRange(entities);
         }
         #endregion Update
-
-
         #region Query
         public IQueryable<TEntity> AsQueryable(bool isTrackingActive = false)
         {
@@ -91,28 +83,35 @@ namespace GenericRepository
                 return _Entity.AsNoTracking().AsQueryable();
             return _Entity.AsQueryable();
         }
-
-        public virtual IQueryable<TEntity> GetAll(bool isTrackingActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes)
+        public async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default, bool isTraclinActive = false)
         {
             var query = _Entity.AsQueryable();
-            if (!isTrackingActive)
+
+            if (!isTraclinActive)
+                return await query.AsNoTracking().ToListAsync(cancellationToken);
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public IQueryable<TEntity> GetQueryByExpression(bool isTraclinActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes)
+        {
+            var query = _Entity.AsQueryable();
+
+            if (!isTraclinActive)
             {
                 query = query.AsNoTracking();
             }
-            if (expression != null)
-            {
-                query = query.Where(expression);
-            }
+
             if (includes != null && includes.Any())
             {
                 query = includes.Aggregate(query, (current, include) => current.Include(include));
             }
+
             return query;
         }
 
+
         #endregion Query
-
-
         #region Control
         public virtual bool Any(Expression<Func<TEntity, bool>> expression)
         {
@@ -133,7 +132,6 @@ namespace GenericRepository
             return _Entity.Where(expression);
         }
         #endregion Control
-
         #region Count
 
         public virtual IQueryable<KeyValuePair<bool, int>> CountBy(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default)
@@ -141,7 +139,6 @@ namespace GenericRepository
             return _Entity.CountBy(expression);
         }
         #endregion Count
-
         #region Get
         public virtual TEntity First(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true)
         {
@@ -237,6 +234,8 @@ namespace GenericRepository
         {
             return await _Entity.FirstAsync(cancellationToken);
         }
+
+       
         #endregion
 
     }

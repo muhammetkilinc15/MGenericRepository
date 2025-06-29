@@ -1,12 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore.Query;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GenericRepository
+
+namespace GenericRepository.Services
 {
     public interface IRepository<TEntity> where TEntity : class
     {
@@ -35,7 +31,8 @@ namespace GenericRepository
 
         #region Get
         IQueryable<TEntity> AsQueryable(bool isTrackingActive = false);
-        IQueryable<TEntity> GetAll(bool isTrackingActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes);
+        Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default, bool isTrackingActive = false);
+        IQueryable<TEntity> GetQueryByExpression(bool isTrackingActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes);
         IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
         TEntity First(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
         TEntity FirstOrDefault(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);

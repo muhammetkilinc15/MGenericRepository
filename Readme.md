@@ -39,18 +39,6 @@ public interface IProductRepository : IRepository<Product>
 
 ----
 
-#### Unit of Work Implementation
-
-```csharp
-public class ApplicationDbContext : DbContext, IUnitOfWork
-{
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-    }
-
-    public DbSet<Product> Products { get; set; }  
-}
-```
 Usage Examples
 ```csharp
  public interface IProductService
@@ -89,9 +77,32 @@ Usage Examples
 }
 ```
 
-#### Dependency Injection
+----
+
+#### Implementation in program.cs ####
+
+
+
+* 1-) If you are using the repository in a single layer
 ```csharp
-  builder.Service.AddScoped<IProductRepository, ProductRepository>();
-  builder.Services.AddScoped<IUnitOfWork>(srv => srv.GetRequiredService<ApplicationDbContext>());
+   builder.Services.AddGenericRepository(options =>
+    {
+        options.UseDbContext<ApplicationDbContext>();
+        // options.RegisterServicesFromAssembly(typeof(ProductRepository).Assembly); // Register services from the specified assembly)
+        // Assembly will be auto-registered: uses the calling assembly by default
+    });
+
+```
+* 2-) If you are using Clean Architecture / Onion Architecture
+``` csharp
+    builder.Services.AddGenericRepository(options =>
+    {
+        options.UseDbContext<ApplicationDbContext>();
+
+        var persistenceAssembly = typeof(ProductRepository).Assembly;
+        var applicationAssembly = typeof(IProductRepository).Assembly;
+
+        options.RegisterServicesFromAssemblies(persistenceAssembly, applicationAssembly);
+    });
 
 ```
