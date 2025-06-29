@@ -61,12 +61,9 @@ Usage Examples
           this.unitOfWork = unitOfWork;
       }
 
-      public async Task<List<Product>> GetProducts(int page, int pageSize)
+      public async Task<List<Product>> GetProducts()
       {
-          return await repository.GetAll()
-                                 .Skip((page - 1) * pageSize) 
-                                 .Take(pageSize)
-                                 .ToListAsync();
+          return await repository.GetAllAsync();
       }
       public async Task<Product> AddProduct(Product product)
       {
