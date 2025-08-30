@@ -12,7 +12,7 @@
     <Product>Generic Repository</Product>
     <Description>.NET Core uygulamalarında veri erişim işlemlerini basitleştiren bir Generic Repository desen uygulamasıdır. Bu paket, CRUD işlemleri, özel sorgular ve Unit of Work ile işlem yönetimi desteği sunar. Kod tekrarını azaltır, okunabilirliği artırır ve bakımını kolaylaştırır.</Description>
     <Copyright>Copyright 2025</Copyright>
-    <PackageIcon>package_logo.jpg</PackageIcon>
+    <PackageIcon>micon.png</PackageIcon>
     <PackageReadmeFile>Readme.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/muhammetkilinc15/GenericRepository</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -23,17 +23,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="C:\Users\Bemu\Downloads\package_logo.jpg">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="micon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="Readme.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
