@@ -30,8 +30,22 @@ namespace GenericRepository.Services
         #endregion
 
         #region Get
-        IQueryable<TEntity> AsQueryable(bool isTrackingActive = false);
-        Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default, bool isTrackingActive = false);
+        IQueryable<TEntity> Query(
+           Expression<Func<TEntity, bool>>? filter = null,
+           Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+           bool isTrackingActive = false);
+
+        Task<List<TDto>> GetListAsync<TDto>(
+             Expression<Func<TEntity, bool>>? filter = null,
+             Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+             Expression<Func<TEntity, TDto>>? select = null,
+             bool isTrackingActive = false,
+             CancellationToken cancellationToken = default);
+        Task<List<TEntity>> GetListAsync(
+                 Expression<Func<TEntity, bool>>? filter = null,
+                 Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+                 bool isTrackingActive = false,
+                 CancellationToken cancellationToken = default);
         IQueryable<TEntity> GetQueryByExpression(bool isTrackingActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes);
         IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
         TEntity First(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);

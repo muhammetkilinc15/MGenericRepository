@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using GenericRepository.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace GenericRepository.Services
 {
@@ -36,62 +36,152 @@ namespace GenericRepository.Services
         #region Delete
         public virtual void Delete(TEntity entity)
         {
+            if (entity is null)
+                throw new RepositoryException("Entity cannot be null.");
+
             _Entity.Remove(entity);
         }
 
-        public virtual async Task DeleteByExpressionAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default)
+        public virtual async Task DeleteByExpressionAsync(
+            Expression<Func<TEntity, bool>> expression,
+            CancellationToken cancellationToken = default)
         {
-            TEntity entity = await _Entity.Where(expression).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+            TEntity? entity = await _Entity
+                .Where(expression)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (entity is null)
+                throw new RepositoryException("Entity not found with the given expression.");
+
             _Entity.Remove(entity);
         }
 
         public virtual async Task DeleteByIdAsync(string id)
         {
-            TEntity entity = await _Entity.FindAsync(id);
+            TEntity? entity = await _Entity.FindAsync(id);
+
+            if (entity is null)
+                throw new RepositoryException($"Entity with Id {id} not found.");
+
             _Entity.Remove(entity);
         }
+
         public virtual void DeleteRange(ICollection<TEntity> entities)
         {
+            if (entities == null || !entities.Any())
+                throw new RepositoryException("No entities provided to delete.");
+
             _Entity.RemoveRange(entities);
         }
         #endregion Delete
         #region Update
         public virtual void Update(TEntity entity)
         {
+            if (entity == null)
+                throw new RepositoryException("Entity cannot be null.");
+
+            var entry = _Context.Entry(entity);
+            if (entry.State == EntityState.Detached)
+                throw new RepositoryException("Cannot update a detached entity.");
+
             _Entity.Update(entity);
         }
 
-        public virtual async Task UpdateByExpressionAsync(Expression<Func<TEntity, bool>> filterExpression,
-                    Expression<Func<SetPropertyCalls<TEntity>, SetPropertyCalls<TEntity>>> updateExpression,
-                         CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(filterExpression);
-            ArgumentNullException.ThrowIfNull(updateExpression);
-            await _Entity.Where(filterExpression).ExecuteUpdateAsync(updateExpression, cancellationToken);
+
+        public virtual async Task UpdateByExpressionAsync(
+             Expression<Func<TEntity, bool>> filterExpression,
+             Expression<Func<SetPropertyCalls<TEntity>, SetPropertyCalls<TEntity>>> updateExpression,
+             CancellationToken cancellationToken = default)
+                {
+                    ArgumentNullException.ThrowIfNull(filterExpression);
+                    ArgumentNullException.ThrowIfNull(updateExpression);
+
+                    var affectedRows = await _Entity
+                        .Where(filterExpression)
+                        .ExecuteUpdateAsync(updateExpression, cancellationToken);
+
+                    if (affectedRows == 0)
+                        throw new RepositoryException("No entities matched the filter expression to update.");
         }
 
 
         public virtual void UpdateRange(ICollection<TEntity> entities)
         {
+            if (entities == null || !entities.Any())
+                throw new RepositoryException("No entities provided to update.");
+
             _Entity.UpdateRange(entities);
         }
+
         #endregion Update
         #region Query
-        public IQueryable<TEntity> AsQueryable(bool isTrackingActive = false)
+        public IQueryable<TEntity> Query(
+            Expression<Func<TEntity, bool>>? filter = null,
+            Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+            bool isTrackingActive = false)
         {
+            IQueryable<TEntity> query = _Entity;
+
             if (!isTrackingActive)
-                return _Entity.AsNoTracking().AsQueryable();
-            return _Entity.AsQueryable();
-        }
-        public async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default, bool isTraclinActive = false)
-        {
-            var query = _Entity.AsQueryable();
+                query = query.AsNoTracking();
 
-            if (!isTraclinActive)
-                return await query.AsNoTracking().ToListAsync(cancellationToken);
+            if (filter != null)
+                query = query.Where(filter);
 
-            return await query.ToListAsync(cancellationToken);
+            if (includeFunc != null)
+                query = includeFunc(query);
+
+            return query;
         }
+
+        public async Task<List<TDto>> GetListAsync<TDto>(
+              Expression<Func<TEntity, bool>>? filter = null,
+              Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+              Expression<Func<TEntity, TDto>>? select = null,
+              bool isTrackingActive = false,
+              CancellationToken cancellationToken = default)
+                {
+                    IQueryable<TEntity> query = _Entity;
+
+                    if (!isTrackingActive)
+                        query = query.AsNoTracking();
+
+                    if (filter != null)
+                        query = query.Where(filter);
+
+                    if (includeFunc != null)
+                        query = includeFunc(query);
+
+                    if (select != null)
+                        return await query.Select(select).ToListAsync(cancellationToken);
+
+                    var entityList = await query.ToListAsync(cancellationToken);
+                    return entityList.Cast<TDto>().ToList();
+        }
+
+
+
+        public async Task<List<TEntity>> GetListAsync(
+               Expression<Func<TEntity, bool>>? filter = null,
+               Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+               bool isTrackingActive = false,
+               CancellationToken cancellationToken = default)
+                {
+                    IQueryable<TEntity> query = _Entity;
+
+                    if (!isTrackingActive)
+                        query = query.AsNoTracking();
+
+                    if (filter != null)
+                        query = query.Where(filter);
+
+                    if (includeFunc != null)
+                        query = includeFunc(query);
+
+                    return await query.ToListAsync(cancellationToken);
+                }
+
 
         public IQueryable<TEntity> GetQueryByExpression(bool isTraclinActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes)
         {
@@ -235,7 +325,6 @@ namespace GenericRepository.Services
             return await _Entity.FirstAsync(cancellationToken);
         }
 
-       
         #endregion
 
     }
