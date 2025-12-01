@@ -15,6 +15,7 @@ namespace GenericRepository.Services
             _Entity = _Context.Set<TEntity>();
         }
 
+
         #region Add
         public virtual void Add(TEntity entity)
         {
