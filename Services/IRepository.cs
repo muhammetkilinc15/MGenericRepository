@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Query;
+﻿using GenericRepository.Models;
+using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 
 
@@ -16,14 +17,9 @@ namespace GenericRepository.Services
         #region Update 
         void Update(TEntity entity);
         void UpdateRange(ICollection<TEntity> entities);
-        Task UpdateByExpressionAsync(Expression<Func<TEntity, bool>> filterExpression,
-                        Expression<Func<SetPropertyCalls<TEntity>, SetPropertyCalls<TEntity>>> updateExpression,
-                        CancellationToken cancellationToken = default);
         #endregion
 
         #region Delete
-        Task DeleteByIdAsync(string id);
-        Task DeleteByExpressionAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
         void Delete(TEntity entity);
         void DeleteRange(ICollection<TEntity> entities);
 
@@ -32,37 +28,37 @@ namespace GenericRepository.Services
         #region Get
         IQueryable<TEntity> Query(
            Expression<Func<TEntity, bool>>? filter = null,
-           Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
            bool isTrackingActive = false);
 
-        Task<List<TDto>> GetListAsync<TDto>(
-             Expression<Func<TEntity, bool>>? filter = null,
-             Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
-             Expression<Func<TEntity, TDto>>? select = null,
-             bool isTrackingActive = false,
-             CancellationToken cancellationToken = default);
         Task<List<TEntity>> GetListAsync(
-                 Expression<Func<TEntity, bool>>? filter = null,
-                 Func<IQueryable<TEntity>, IQueryable<TEntity>>? includeFunc = null,
+                 Expression<Func<TEntity, bool>> filter = null,
+                 Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
                  bool isTrackingActive = false,
                  CancellationToken cancellationToken = default);
-        IQueryable<TEntity> GetQueryByExpression(bool isTrackingActive = false, Expression<Func<TEntity, bool>> expression = null, params Expression<Func<TEntity, object>>[] includes);
-        IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
-        TEntity First(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
-        TEntity FirstOrDefault(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true);
-        Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default, bool isTrackingActive = true);
-        Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default, bool isTrackingActive = true);
-        Task<TEntity> GetByExpressionAsync(
-                Expression<Func<TEntity, bool>> expression,
-                bool isTrackingActive = true,
-                CancellationToken cancellationToken = default,
-                params Expression<Func<TEntity, object>>[] includes);
-
-        Task<TEntity> GetFirstAsync(CancellationToken cancellationToken = default);
+      
+        TEntity FirstOrDefault(
+            Expression<Func<TEntity, bool>> expression,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+            bool isTrackingActive = true);
+        Task<TEntity> FirstOrDefaultAsync(
+            Expression<Func<TEntity, bool>> expression,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+            bool isTrackingActive = true,
+            CancellationToken cancellationToken = default);
+     
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
         bool Any(Expression<Func<TEntity, bool>> expression);
-        TEntity GetByExpression(Expression<Func<TEntity, bool>> expression, bool isTrackingActive = true, params Expression<Func<TEntity, object>>[] includes);
-        TEntity GetFirst();
+
+        #endregion
+
+        #region Get Page
+        Task<PagingResult<TEntity>> GetPagedAsync(
+            PagingRequest request,
+            Expression<Func<TEntity, bool>>? filter = null,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+            bool isTrackingActive = false,
+            CancellationToken cancellationToken = default);
         #endregion
         IQueryable<KeyValuePair<bool, int>> CountBy(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
     }
