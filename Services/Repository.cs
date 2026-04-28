@@ -77,48 +77,6 @@ namespace GenericRepository.Services
 
         #endregion Update
 
-        #region Query
-        public IQueryable<TEntity> Query(
-            Expression<Func<TEntity, bool>> filter = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = false)
-        {
-            IQueryable<TEntity> query = _Entity;
-
-            if (!isTrackingActive)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (filter != null)
-                query = query.Where(filter);
-
-            return query;
-        }
-
-        public async Task<List<TEntity>> GetListAsync(
-               Expression<Func<TEntity, bool>>? filter = null,
-               Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-               bool isTrackingActive = false,
-               CancellationToken cancellationToken = default)
-        {
-            IQueryable<TEntity> query = _Entity;
-
-            if (!isTrackingActive)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (filter != null)
-                query = query.Where(filter);
-
-            return await query.ToListAsync(cancellationToken);
-        }
-
-        #endregion Query
-
         #region Control
         public virtual bool Any(Expression<Func<TEntity, bool>> expression)
         {
@@ -141,24 +99,62 @@ namespace GenericRepository.Services
         #endregion Count
 
         #region Get
-
-        public virtual TEntity FirstOrDefault(
-            Expression<Func<TEntity, bool>> expression,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = true)
+        public IQueryable<TEntity> Query(
+           Expression<Func<TEntity, bool>> filter = null,
+           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
+           bool isTrackingActive = false)
         {
-            return BuildQuery(include, isTrackingActive).FirstOrDefault(expression);
+            return BuildQuery(include, isTrackingActive, filter);
         }
 
-        public virtual async Task<TEntity> FirstOrDefaultAsync(
-            Expression<Func<TEntity, bool>> expression,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = true,
+        public async Task<List<TEntity>> GetListAsync(
+             Expression<Func<TEntity, bool>> filter = null,
+             Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+             CancellationToken cancellationToken = default)
+        {
+            return await BuildQuery(include, true, filter).ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<TEntity>> GetListAsyncNoTracking(
+               Expression<Func<TEntity, bool>> filter = null,
+               Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+               CancellationToken cancellationToken = default)
+        {
+            IQueryable<TEntity> query = _Entity;
+            return await BuildQuery(include, false, filter).ToListAsync(cancellationToken);
+        }
+        public virtual TEntity GetFirstOrDefault(
+            Expression<Func<TEntity, bool>> filter,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null)
+        {
+            return BuildQuery(include, true, filter).FirstOrDefault();
+        }
+
+        public virtual TEntity GetFirstOrDefaultAsNoTracking(
+         Expression<Func<TEntity, bool>> filter,
+         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null)
+        {
+            return BuildQuery(include, false, filter).FirstOrDefault();
+        }
+        public virtual async Task<TEntity> GetFirstOrDefaultAsync(
+            Expression<Func<TEntity, bool>> filter,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
             CancellationToken cancellationToken = default)
         {
-            return await BuildQuery(include, isTrackingActive).FirstOrDefaultAsync(expression, cancellationToken);
+            return await BuildQuery(include, true, filter).FirstOrDefaultAsync(cancellationToken);
         }
-        private IQueryable<TEntity> BuildQuery(Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include, bool isTrackingActive)
+        public virtual async Task<TEntity> GetFirstOrDefaultAsyncNoTracking(
+          Expression<Func<TEntity, bool>> expression,
+          Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
+          CancellationToken cancellationToken = default)
+        {
+            return await BuildQuery(include, false).FirstOrDefaultAsync(expression, cancellationToken);
+        }
+
+        private IQueryable<TEntity> BuildQuery(
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include,
+            bool isTrackingActive,
+            Expression<Func<TEntity, bool>>? filter = null)
         {
             IQueryable<TEntity> query = _Entity;
 
@@ -168,6 +164,8 @@ namespace GenericRepository.Services
             if (include != null)
                 query = include(query);
 
+            if (filter != null)
+                query = query.Where(filter);
             return query;
         }
 

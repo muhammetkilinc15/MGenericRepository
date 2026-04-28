@@ -34,22 +34,37 @@ namespace GenericRepository.Services
         Task<List<TEntity>> GetListAsync(
                  Expression<Func<TEntity, bool>> filter = null,
                  Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-                 bool isTrackingActive = false,
                  CancellationToken cancellationToken = default);
-      
-        TEntity FirstOrDefault(
+
+        Task<List<TEntity>> GetListAsyncNoTracking(
+               Expression<Func<TEntity, bool>> filter = null,
+               Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+               CancellationToken cancellationToken = default);
+
+        TEntity GetFirstOrDefault(
             Expression<Func<TEntity, bool>> expression,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = true);
-        Task<TEntity> FirstOrDefaultAsync(
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null);
+
+         TEntity GetFirstOrDefaultAsNoTracking(
             Expression<Func<TEntity, bool>> expression,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = true,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null);
+
+        Task<TEntity> GetFirstOrDefaultAsync(
+            Expression<Func<TEntity, bool>> expression,
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null
             CancellationToken cancellationToken = default);
-     
+
+        Task<TEntity> GetFirstOrDefaultAsyncNoTracking(
+           Expression<Func<TEntity, bool>> expression,
+           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
+           CancellationToken cancellationToken = default);
+
+
+        #endregion
+
+        #region Control
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
         bool Any(Expression<Func<TEntity, bool>> expression);
-
         #endregion
 
         #region Get Page
