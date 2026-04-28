@@ -1,7 +1,8 @@
-﻿
+using Microsoft.EntityFrameworkCore;
+
 namespace GenericRepository.Services
 {
-    public interface IUnitOfWork : IDisposable
+    public interface IUnitOfWork<TContext> : IDisposable where TContext : DbContext
     {
         Task BeginTransactionAsync(CancellationToken cancellationToken = default);
         Task CommitAsync(CancellationToken cancellationToken = default);

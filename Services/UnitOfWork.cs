@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GenericRepository.Services
 {
-    public sealed class UnitOfWork<TContext> : IUnitOfWork where TContext : DbContext
+    public class UnitOfWork<TContext> : IUnitOfWork<TContext> where TContext : DbContext
     {
         private readonly TContext _context;
         private IDbContextTransaction? _transaction;
@@ -16,7 +16,7 @@ namespace GenericRepository.Services
         public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             if (_transaction != null)
-                return; 
+                return;
 
             _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         }
@@ -55,7 +55,6 @@ namespace GenericRepository.Services
         public void Dispose()
         {
             _transaction?.Dispose();
-            _context.Dispose();
         }
     }
 }
