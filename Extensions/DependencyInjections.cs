@@ -1,5 +1,6 @@
-﻿using GenericRepository.Options;
+using GenericRepository.Options;
 using GenericRepository.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -7,92 +8,103 @@ namespace GenericRepository
 {
     public static class DependencyInjections
     {
-
-        //// Default options for the Repository Service
-        //public static IServiceCollection AddGenericRepository(this IServiceCollection services)
-        //{
-        //    var defaultOptionModel = RepositoryConfigureOptions.CreateDefault();
-        //    return services.AddGenericRepository(defaultOptionModel);
-        //}
-
-        // user can their own options an action delegate
-        public static IServiceCollection AddGenericRepository(this IServiceCollection services, Action<RepositoryConfigureOptions> configureOptions)
+        public static IServiceCollection AddGenericRepository<TContext>(
+            this IServiceCollection services,
+            Action<RepositoryConfigureOptions<TContext>> configureOptions)
+            where TContext : DbContext
         {
-            var options = new RepositoryConfigureOptions();
-            if (options.Assemblies.Count == 0)
-            {
-                options.RegisterServicesFromAssembly(Assembly.GetCallingAssembly());
-            }
+            var options = new RepositoryConfigureOptions<TContext>();
             configureOptions(options);
-            return services.AddGenericRepository(options);
-        }
 
+            if (options.Assemblies.Count == 0)
+                options.RegisterServicesFromAssembly(Assembly.GetCallingAssembly());
 
-        // User can provide their own options
-        private static IServiceCollection AddGenericRepository(this IServiceCollection services, RepositoryConfigureOptions optionModel)
-        {
-            services.AddSingleton(optionModel);
-            RegisterRepositories(services, optionModel);
+            RegisterRepositories<TContext>(services, options);
+            RegisterUnitOfWork<TContext>(services, options);
+
             return services;
         }
 
-        private static void RegisterRepositories(IServiceCollection services, RepositoryConfigureOptions options)
+        private static void RegisterRepositories<TContext>(
+            IServiceCollection services,
+            RepositoryConfigureOptions<TContext> options)
+            where TContext : DbContext
         {
-            // Tüm assembly'lerden sadece interface'leri ve Repository türevlerini seç
             var allTypes = options.Assemblies
                 .SelectMany(a => a.GetTypes())
                 .Where(t =>
-                    (
-                        (t.IsInterface && !t.IsGenericType &&
-                            t.GetInterfaces().Any(i =>
-                                i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<>))
-                        )
-                        ||
-                        (t.IsClass && !t.IsAbstract && !t.IsGenericTypeDefinition && IsDerivedFromGeneric(t, typeof(Repository<,>)))
-                    )
-                ).ToList();
-
-
-
-            // IRepository<> den türeyen interface'ler
-            var repositoryInterfaces = allTypes
-                .Where(t => t.IsInterface)
+                    (t.IsInterface && !t.IsGenericType &&
+                        t.GetInterfaces().Any(i =>
+                            i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<>)))
+                    ||
+                    (t.IsClass && !t.IsAbstract && !t.IsGenericTypeDefinition &&
+                        IsDerivedFromGeneric(t, typeof(Repository<,>))))
                 .ToList();
 
-            // Repository<,> türevleri
-            var repositoryImplementations = allTypes
-                .Where(t => t.IsClass)
-                .ToList();
-
-
+            var repositoryInterfaces = allTypes.Where(t => t.IsInterface).ToList();
+            var repositoryImplementations = allTypes.Where(t => t.IsClass).ToList();
 
             foreach (var repositoryInterface in repositoryInterfaces)
             {
-                var implementation = repositoryImplementations.FirstOrDefault(t => t.GetInterfaces().Any(i => i == repositoryInterface));
+                var implementation = repositoryImplementations.FirstOrDefault(t =>
+                    t.GetInterfaces().Any(i => i == repositoryInterface) &&
+                    UsesContext(t, typeof(TContext)));
 
-                if (implementation is not null)
-                {
-                    services.AddScoped(repositoryInterface, implementation);
-                }
-                else
-                {
-                    throw new Exception($"There is no implementation for {repositoryInterface.Name}");
-                }
+                if (implementation is null)
+                    continue;
+
+                services.AddScoped(repositoryInterface, implementation);
             }
-
-            // Register UnitOfWork
-            var unitOfWorkType = typeof(UnitOfWork<>).MakeGenericType(options.DbContextType);
-            services.AddScoped(typeof(IUnitOfWork), unitOfWorkType);
-
-
         }
-        // Helper for checking if a type is derived from a generic type
+
+        private static void RegisterUnitOfWork<TContext>(
+            IServiceCollection services,
+            RepositoryConfigureOptions<TContext> options)
+            where TContext : DbContext
+        {
+            var concreteUow = typeof(UnitOfWork<TContext>);
+            var genericUowInterface = typeof(IUnitOfWork<TContext>);
+
+            services.AddScoped(concreteUow);
+            services.AddScoped(genericUowInterface, sp => sp.GetRequiredService(concreteUow));
+
+            var markerInterfaces = options.Assemblies
+                .SelectMany(a => a.GetTypes())
+                .Where(t =>
+                    t.IsInterface &&
+                    !t.IsGenericType &&
+                    t != genericUowInterface &&
+                    t.GetInterfaces().Any(i =>
+                        i.IsGenericType &&
+                        i.GetGenericTypeDefinition() == typeof(IUnitOfWork<>) &&
+                        i.GenericTypeArguments[0] == typeof(TContext)))
+                .ToList();
+
+            foreach (var marker in markerInterfaces)
+                services.AddScoped(marker, sp => sp.GetRequiredService(concreteUow));
+        }
+
+        private static bool UsesContext(Type implementation, Type contextType)
+        {
+            var current = implementation;
+            while (current != null && current != typeof(object))
+            {
+                if (current.IsGenericType &&
+                    current.GetGenericTypeDefinition() == typeof(Repository<,>))
+                {
+                    return current.GenericTypeArguments[1] == contextType;
+                }
+                current = current.BaseType;
+            }
+            return false;
+        }
+
         private static bool IsDerivedFromGeneric(Type type, Type genericBaseType)
         {
             while (type != null && type != typeof(object))
             {
-                var currentType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
-                if (currentType == genericBaseType)
+                var current = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+                if (current == genericBaseType)
                     return true;
 
                 type = type.BaseType;
@@ -100,5 +112,4 @@ namespace GenericRepository
             return false;
         }
     }
-
 }
