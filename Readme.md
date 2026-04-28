@@ -29,11 +29,19 @@ dotnet add package MGenericRepository
 ## 1. Define Your Repository
 
 ```csharp
+// 1. (Optional) Create a base repository for your application to avoid repeating ApplicationDbContext
+public class ApplicationRepository<TEntity> : Repository<TEntity, ApplicationDbContext>
+    where TEntity : class
+{
+    public ApplicationRepository(ApplicationDbContext context) : base(context) { }
+}
+
+// 2. Define your entity-specific repository
 public interface IProductRepository : IRepository<Product>
 {
 }
 
-public class ProductRepository : Repository<Product, ApplicationDbContext>, IProductRepository
+public class ProductRepository : ApplicationRepository<Product>, IProductRepository
 {
     public ProductRepository(ApplicationDbContext context) : base(context) { }
 }
@@ -158,11 +166,10 @@ public class OrderService
 `Include` uses the `IIncludableQueryable` pattern, so `ThenInclude` works:
 
 ```csharp
-var product = await _repository.FirstOrDefaultAsync(
+var product = await _repository.GetFirstOrDefaultAsyncNoTracking(
     p => p.Id == id,
     include: q => q.Include(p => p.Category)
                    .Include(p => p.Reviews).ThenInclude(r => r.User),
-    isTrackingActive: false,
     cancellationToken: ct);
 ```
 
@@ -197,14 +204,16 @@ var topProducts = await query
 ### Through the repository
 
 ```csharp
+var request = new PagingRequest
+{
+    PageNumber = 1,
+    PageSize = 20,
+    OrderBy = "CreateAppUser.FullName", // nested property paths supported
+    IsDesc = true
+};
+
 var page = await _repository.GetPagedAsync(
-    new PagingRequest
-    {
-        PageNumber = 1,
-        PageSize = 20,
-        OrderBy = "CreateAppUser.FullName", // nested property paths supported
-        IsDesc = true
-    },
+    request,
     filter: p => p.IsActive,
     include: q => q.Include(p => p.CreateAppUser),
     cancellationToken: ct);
@@ -303,15 +312,17 @@ await _repository.Query(p => p.IsDiscontinued)
 
 | Method | Purpose |
 | --- | --- |
-| `AddAsync` / `Add` / `AddRangeAsync` | Insert entities |
+| `Add` / `AddAsync` / `AddRange` / `AddRangeAsync` | Insert entities (Sync/Async) |
 | `Update` / `UpdateRange` | Update entities |
 | `Delete` / `DeleteRange` | Remove entities |
-| `FirstOrDefault` / `FirstOrDefaultAsync` | Single entity by predicate |
-| `GetListAsync` | List of entities by predicate |
-| `Query` | Compose your own `IQueryable<T>` |
-| `GetPagedAsync` | Paginated result |
-| `Any` / `AnyAsync` / `CountBy` | Existence and counting |
-| `IUnitOfWork<TContext>` | `BeginTransactionAsync`, `CommitAsync`, `RollbackAsync`, `SaveChangesAsync` |
+| `GetFirstOrDefault` / `GetFirstOrDefaultAsync` | Get single entity by predicate |
+| `GetFirstOrDefaultAsNoTracking` / `GetFirstOrDefaultAsyncNoTracking` | Get single entity (No Tracking) |
+| `GetListAsync` / `GetListAsyncNoTracking` | List of entities by predicate |
+| `Query` | Compose your own `IQueryable<T>` with optional tracking |
+| `GetPagedAsync` | Paginated result with optional tracking |
+| `Any` / `AnyAsync` | Check existence |
+| `CountBy` | Count entities matching a predicate |
+| `IUnitOfWork<TContext>` | `BeginTransactionAsync`, `CommitAsync`, `RollbackAsync`, `SaveChangesAsync`, `SaveChanges` |
 
 ---
 
@@ -320,6 +331,6 @@ await _repository.Query(p => p.IsDiscontinued)
 - `IUnitOfWork` is now generic: `IUnitOfWork<TContext>`. Update all injection sites.
 - `AddGenericRepository(...)` is now generic: `AddGenericRepository<TContext>(...)`. The `UseDbContext<T>()` option is removed — pass the context as a generic parameter instead.
 - Include parameters now use `Func<IQueryable<T>, IIncludableQueryable<T, object>>` instead of `params Expression<Func<T, object>>[]`. Rewrite includes as lambdas: `q => q.Include(...).ThenInclude(...)`.
-- `GetByExpression` / `GetByExpressionAsync` removed — use `FirstOrDefault` / `FirstOrDefaultAsync` (identical behavior).
-- `First` / `FirstAsync` / `GetFirst` / `GetFirstAsync` removed — use `FirstOrDefault` / `FirstOrDefaultAsync` and handle null explicitly, or call `Query().First()`.
+- `GetByExpression` / `GetByExpressionAsync` removed — use `GetFirstOrDefault` / `GetFirstOrDefaultAsync` (identical behavior).
+- `First` / `FirstAsync` / `GetFirst` / `GetFirstAsync` removed — use `GetFirstOrDefault` / `GetFirstOrDefaultAsync` and handle null explicitly, or call `Query().First()`.
 - Sync `Where` removed — use `Query(filter: ...)`.

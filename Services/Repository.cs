@@ -144,11 +144,11 @@ namespace GenericRepository.Services
             return await BuildQuery(include, true, filter).FirstOrDefaultAsync(cancellationToken);
         }
         public virtual async Task<TEntity> GetFirstOrDefaultAsyncNoTracking(
-          Expression<Func<TEntity, bool>> expression,
+          Expression<Func<TEntity, bool>> filter,
           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
           CancellationToken cancellationToken = default)
         {
-            return await BuildQuery(include, false).FirstOrDefaultAsync(expression, cancellationToken);
+            return await BuildQuery(include, false, filter).FirstOrDefaultAsync(cancellationToken);
         }
 
         private IQueryable<TEntity> BuildQuery(
@@ -176,8 +176,8 @@ namespace GenericRepository.Services
             PagingRequest request,
             Expression<Func<TEntity, bool>>? filter = null,
             Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = false,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            bool isTrackingActive = false)
         {
             return Query(filter, include, isTrackingActive).ToPagedAsync(request, cancellationToken);
         }

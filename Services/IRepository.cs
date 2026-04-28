@@ -51,7 +51,7 @@ namespace GenericRepository.Services
 
         Task<TEntity> GetFirstOrDefaultAsync(
             Expression<Func<TEntity, bool>> expression,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
             CancellationToken cancellationToken = default);
 
         Task<TEntity> GetFirstOrDefaultAsyncNoTracking(
@@ -72,8 +72,8 @@ namespace GenericRepository.Services
             PagingRequest request,
             Expression<Func<TEntity, bool>>? filter = null,
             Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
-            bool isTrackingActive = false,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            bool isTrackingActive = false);
         #endregion
         IQueryable<KeyValuePair<bool, int>> CountBy(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default);
     }
